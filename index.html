@@ -9,7 +9,6 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Orçamento Familiar">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -115,25 +114,36 @@
   }
   .icon-btn:active{ transform:scale(0.94); }
 
-  .header-actions{ display:flex; gap:8px; flex-shrink:0; }
-  .whoami{
+  .who-switch{
     margin-top:14px;
-    font-size:11.5px;
+    display:flex;
+    gap:6px;
+    background:rgba(0,0,0,0.14);
+    border-radius:999px;
+    padding:3px;
+  }
+  .who-switch button{
+    flex:1;
+    border:none;
+    background:none;
     color:var(--gold-soft);
-    opacity:0.85;
+    opacity:0.7;
+    font-size:12px;
+    font-weight:600;
+    padding:7px 8px;
+    border-radius:999px;
+    cursor:pointer;
     display:flex;
     align-items:center;
-    gap:6px;
+    justify-content:center;
+    gap:5px;
   }
-  .whoami .who-dot{ width:7px;height:7px;border-radius:50%; }
-  .whoami button{
-    background:none;border:none;color:var(--gold-soft);
-    text-decoration:underline;
-    font-size:11.5px;
-    cursor:pointer;
-    padding:0;
-    opacity:0.8;
+  .who-switch button.active{
+    background:rgba(245,239,221,0.9);
+    color:var(--cover);
+    opacity:1;
   }
+  .who-switch .dot{ width:7px;height:7px;border-radius:50%; }
 
   .tab-bar{
     margin-top:14px;
@@ -371,7 +381,7 @@
   .modal-hint{ font-size:12.5px; color:var(--ink-soft); margin:-8px 0 16px; line-height:1.5; }
   .modal label{ display:block; font-size:11px; color:var(--ink-soft); margin-bottom:4px; margin-top:12px; }
   .modal label:first-of-type{ margin-top:0; }
-  .modal input[type=text], .modal input[type=number], .modal input[type=date], .modal input[type=email], .modal select, .modal textarea{
+  .modal input[type=text], .modal input[type=number], .modal input[type=date], .modal select, .modal textarea{
     width:100%; border:1px solid var(--page-line); background:#fff; border-radius:8px;
     padding:10px 11px; font-size:15px; color:var(--ink); resize:vertical;
   }
@@ -415,37 +425,6 @@
     min-height:100vh; color:var(--ink-soft); font-size:13.5px; font-family:var(--font-display);
   }
 
-  /* Gate / onboarding (full screen, pre-login) */
-  .gate{
-    position:fixed; inset:0;
-    background:linear-gradient(160deg, var(--cover), var(--cover-light));
-    display:flex; align-items:center; justify-content:center;
-    padding:24px; z-index:100;
-  }
-  .gate[hidden]{ display:none; }
-  .gate-inner{ max-width:360px; width:100%; text-align:center; }
-  .gate-inner .cover-title{ font-size:27px; line-height:1.2; }
-  .gate-sub{ color:var(--gold-soft); opacity:0.8; font-size:13.5px; margin:6px 0 34px; }
-  .btn-google{
-    background:#F5EFDD; color:var(--cover);
-    border:none; border-radius:8px;
-    padding:14px 20px; font-size:15px; font-weight:700;
-    cursor:pointer; width:100%;
-    font-family:var(--font-display);
-  }
-  .btn-google:active{ transform:scale(0.99); }
-  .gate-note{ color:var(--gold-soft); opacity:0.75; font-size:12px; margin-top:16px; min-height:16px; line-height:1.5; }
-  .onboarding-card{
-    background:var(--page); border-radius:16px; padding:22px;
-    text-align:left; max-width:400px;
-  }
-  .onboarding-card .modal-title{ text-align:center; }
-  .onboarding-card .modal-hint{ text-align:center; margin-top:-6px; }
-  .onboarding-card input[type=text], .onboarding-card input[type=email]{
-    width:100%; border:1px solid var(--page-line); background:#fff; border-radius:8px;
-    padding:10px 11px; font-size:15px; color:var(--ink);
-  }
-
   @media (prefers-reduced-motion: no-preference){
     .entry{ animation: fadeIn 0.25s ease; }
     @keyframes fadeIn{ from{opacity:0; transform:translateY(2px);} to{opacity:1; transform:none;} }
@@ -454,29 +433,17 @@
 </head>
 <body>
 
-<!-- ============ SIGN-IN GATE ============ -->
-<div class="gate" id="gate">
-  <div class="gate-inner">
-    <p class="cover-title">Orçamento Familiar</p>
-    <p class="gate-sub">Controle de gastos da família</p>
-    <button class="btn-google" id="btn-signin" type="button">Entrar com Google</button>
-    <p class="gate-note" id="gate-note"></p>
-  </div>
-</div>
-
-<!-- ============ ONBOARDING (first run) ============ -->
-<div class="gate" id="onboarding" hidden>
-  <div class="gate-inner onboarding-card">
-    <p class="modal-title">Vamos criar seu orçamento</p>
-    <p class="modal-hint">Conectado como <strong id="onb-my-name">—</strong> (<span id="onb-my-email">—</span>)</p>
-    <label for="onb-partner-email">E-mail do Google do seu parceiro(a)</label>
-    <input type="email" id="onb-partner-email" placeholder="parceiro@gmail.com" required>
-    <label for="onb-partner-name">Nome do seu parceiro(a) <span style="opacity:.6;font-weight:400">(opcional)</span></label>
-    <input type="text" id="onb-partner-name" placeholder="Nome">
-    <button class="btn btn-primary" id="btn-create-file" style="width:100%;margin-top:18px;">Criar e compartilhar</button>
-    <p class="form-error" id="onb-error" hidden></p>
-  </div>
-</div>
+<div id="loading" class="loading-screen">Abrindo o orçamento…</div>
+<script>
+  // Trava de segurança independente: garante que a tela nunca fique presa,
+  // mesmo se o script principal falhar por qualquer motivo.
+  setTimeout(function(){
+    var loading = document.getElementById('loading');
+    var notebook = document.getElementById('notebook');
+    if(loading){ loading.style.display = 'none'; }
+    if(notebook){ notebook.removeAttribute('hidden'); notebook.style.display = 'flex'; }
+  }, 3000);
+</script>
 
 <div class="notebook" id="notebook" hidden>
 
@@ -487,19 +454,13 @@
         <div>
           <p class="cover-title">Orçamento Familiar</p>
           <p class="cover-sub" id="cover-sub">gastos e receitas da família</p>
+          <p class="cover-sub" id="local-mode-notice" style="color:#F0C9BE;opacity:0.9;" hidden></p>
         </div>
       </div>
-      <div class="header-actions">
-        <button class="icon-btn" id="btn-refresh" aria-label="Atualizar" type="button">↻</button>
-        <button class="icon-btn" id="btn-open-settings" aria-label="Configurações" type="button">⚙︎</button>
-      </div>
+      <button class="icon-btn" id="btn-open-settings" aria-label="Configurações" type="button">⚙︎</button>
     </div>
 
-    <div class="whoami">
-      <span class="who-dot" id="who-dot"></span>
-      <span id="who-text">—</span>
-      <button id="btn-signout" type="button">sair</button>
-    </div>
+    <div class="who-switch" id="who-switch"></div>
 
     <div class="tab-bar" id="tab-bar">
       <button type="button" class="tab-btn active" data-tab="gastos">Gastos</button>
@@ -522,9 +483,6 @@
   </div>
 
   <div class="page">
-    <div id="mismatch-banner" hidden class="banner">
-      Seu e-mail ainda não está associado a nenhum dos dois perfis. Abra Configurações para corrigir.
-    </div>
 
     <!-- ===================== TAB: GASTOS ===================== -->
     <div class="tab-panel" id="tab-gastos">
@@ -722,13 +680,9 @@
     <div class="settings-section-title">Pessoas</div>
     <label>Pessoa 1 — nome</label>
     <input type="text" id="settings-name-p1" maxlength="20">
-    <label>Pessoa 1 — e-mail do Google</label>
-    <input type="email" id="settings-email-p1">
     <div class="swatches" id="swatches-p1"></div>
     <label>Pessoa 2 — nome</label>
     <input type="text" id="settings-name-p2" maxlength="20">
-    <label>Pessoa 2 — e-mail do Google</label>
-    <input type="email" id="settings-email-p2">
     <div class="swatches" id="swatches-p2"></div>
 
     <div class="settings-section-title">Categorias de gastos</div>
@@ -775,32 +729,14 @@
   var expenses = [];
   var incomes = [];
   var investments = [];
-  var currentPersonId = null;
+  var currentPersonId = 'p1';
   var activeTab = 'gastos';
   var currentMonth = monthKeyFromDate(new Date());
   var personFilter = null;
   var categoryFilter = null;
   var editingId = null;
-  var editingType = null; // 'expense' | 'income' | 'freedom'
+  var editingType = null; // 'expense' | 'income'
   var pollTimer = null;
-
-  // =====================================================================
-  // CONFIGURAÇÃO — troque o valor abaixo pelo Client ID que você vai criar
-  // no Google Cloud Console (veja o passo a passo que o Claude te enviou).
-  // =====================================================================
-  var CONFIG = {
-    CLIENT_ID: 'COLE_AQUI_SEU_CLIENT_ID.apps.googleusercontent.com',
-    SCOPES: 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
-    DATA_FILENAME: 'orcamento-familiar-dados.json'
-  };
-  // =====================================================================
-
-  var DRIVE_BASE = 'https://www.googleapis.com/drive/v3';
-  var DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3';
-  var accessToken = null;
-  var userProfile = null;
-  var fileId = null;
-  var tokenClient = null;
 
   // ---------- helpers ----------
   function pad2(n){ return n<10 ? '0'+n : ''+n; }
@@ -844,11 +780,11 @@
     return CATEGORY_PALETTE[existingColors.length % CATEGORY_PALETTE.length];
   }
 
-  function defaultSettings(name1, email1, name2, email2){
+  function defaultSettings(){
     return {
       people: [
-        {id:'p1', name:name1||'Pessoa 1', email:email1||'', color:'#C1502E'},
-        {id:'p2', name:name2||'Pessoa 2', email:email2||'', color:'#2C6E8E'}
+        {id:'p1', name:'Guilherme', color:'#C1502E'},
+        {id:'p2', name:'Aline', color:'#2C6E8E'}
       ],
       expenseCategories: [
         {id:'moradia', name:'Moradia', emoji:'🏠', color:'#D9A62E'},
@@ -877,238 +813,95 @@
     };
   }
 
-  // ---------- Google Drive REST helpers ----------
-  function authFetch(url, options){
-    options = options || {};
-    options.headers = Object.assign({}, options.headers, {Authorization: 'Bearer ' + accessToken});
-    return fetch(url, options);
-  }
-  async function fetchUserInfo(){
-    var res = await authFetch('https://www.googleapis.com/oauth2/v3/userinfo');
-    if(!res.ok) throw new Error('userinfo failed: ' + res.status);
-    var data = await res.json();
-    return {name: data.name || data.given_name || 'Você', email: data.email};
-  }
-  async function driveFindFile(){
-    var q = encodeURIComponent("name = '"+CONFIG.DATA_FILENAME+"' and trashed = false");
-    var res = await authFetch(DRIVE_BASE+'/files?q='+q+'&fields=files(id,name)&pageSize=5');
-    if(!res.ok) return null;
-    var data = await res.json();
-    return (data.files && data.files.length) ? data.files[0].id : null;
-  }
-  async function driveGetContent(id){
-    var res = await authFetch(DRIVE_BASE+'/files/'+id+'?alt=media');
-    if(!res.ok) throw new Error('drive get failed: '+res.status);
-    return await res.text();
-  }
-  async function driveCreateFile(name, contentObj){
-    var boundary = 'orcamento_' + Date.now();
-    var metadata = {name:name, mimeType:'application/json'};
-    var content = JSON.stringify(contentObj);
-    var body =
-      '--'+boundary+'\r\n'+
-      'Content-Type: application/json; charset=UTF-8\r\n\r\n'+
-      JSON.stringify(metadata) + '\r\n'+
-      '--'+boundary+'\r\n'+
-      'Content-Type: application/json\r\n\r\n'+
-      content + '\r\n'+
-      '--'+boundary+'--';
-    var res = await authFetch(DRIVE_UPLOAD_BASE+'/files?uploadType=multipart&fields=id', {
-      method:'POST',
-      headers:{'Content-Type':'multipart/related; boundary='+boundary},
-      body: body
-    });
-    if(!res.ok) throw new Error('drive create failed: '+res.status);
-    var data = await res.json();
-    return data.id;
-  }
-  async function driveUpdateContent(id, contentObj){
-    try{
-      var res = await authFetch(DRIVE_UPLOAD_BASE+'/files/'+id+'?uploadType=media', {
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(contentObj)
-      });
-      return res.ok;
-    }catch(e){ return false; }
-  }
-  async function driveShareFile(id, email){
-    try{
-      var res = await authFetch(DRIVE_BASE+'/files/'+id+'/permissions?sendNotificationEmail=true', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({role:'writer', type:'user', emailAddress:email})
-      });
-      return res.ok;
-    }catch(e){ return false; }
-  }
+  // =====================================================================
+  // CONFIGURAÇÃO — troque o valor abaixo pela URL do Apps Script que você
+  // vai publicar na planilha do Google Sheets (veja o passo a passo).
+  // =====================================================================
+  var CONFIG = {
+    APPS_SCRIPT_URL: 'COLE_AQUI_A_URL_DO_APPS_SCRIPT'
+  };
+  // =====================================================================
 
-  // ---------- unified persistence (single Drive file holds everything) ----------
+  // ---------- storage (Google Apps Script / planilha) ----------
+  var storageAvailable = true;
+  function isConfigured(){
+    return CONFIG.APPS_SCRIPT_URL && CONFIG.APPS_SCRIPT_URL.indexOf('COLE_AQUI') !== 0;
+  }
+  async function loadAll(){
+    if(!isConfigured()){
+      settings = defaultSettings();
+      expenses = []; incomes = []; investments = [];
+      storageAvailable = false;
+      return;
+    }
+    try{
+      var res = await fetch(CONFIG.APPS_SCRIPT_URL, {method:'GET'});
+      var data = await res.json();
+      settings = data && data.settings ? data.settings : null;
+      expenses = (data && data.expenses) || [];
+      incomes = (data && data.incomes) || [];
+      investments = (data && data.investments) || [];
+      storageAvailable = true;
+    }catch(e){
+      settings = null; expenses = []; incomes = []; investments = [];
+      storageAvailable = false;
+    }
+    if(!settings || !settings.people){ settings = defaultSettings(); }
+    if(!settings.freedomCategories){ settings.freedomCategories = defaultSettings().freedomCategories; }
+    if(!settings.incomeCategories){ settings.incomeCategories = defaultSettings().incomeCategories; }
+    try{
+      var dp = localStorage.getItem('of_device_person');
+      if(dp){ currentPersonId = dp; }
+    }catch(e){}
+  }
   async function persistAll(){
-    if(!fileId) return false;
-    return await driveUpdateContent(fileId, {settings:settings, expenses:expenses, incomes:incomes, investments:investments});
+    if(!isConfigured()) return false;
+    try{
+      var res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({settings:settings, expenses:expenses, incomes:incomes, investments:investments})
+      });
+      return res.ok;
+    }catch(e){ return false; }
   }
   async function persistSettings(){ return await persistAll(); }
   async function persistExpenses(){ return await persistAll(); }
   async function persistIncomes(){ return await persistAll(); }
   async function persistInvestments(){ return await persistAll(); }
-
-  // ---------- auth flow ----------
-  function waitForGoogleScript(cb){
-    var tries = 0;
-    var iv = setInterval(function(){
-      tries++;
-      if(window.google && google.accounts && google.accounts.oauth2){
-        clearInterval(iv); cb(true);
-      }else if(tries > 40){
-        clearInterval(iv); cb(false);
-      }
-    }, 200);
+  async function persistDevicePerson(id){ try{ localStorage.setItem('of_device_person', id); }catch(e){} }
+  function withTimeout(promise, ms){
+    return Promise.race([
+      promise,
+      new Promise(function(resolve){ setTimeout(resolve, ms); })
+    ]);
   }
-  function initAuth(){
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CONFIG.CLIENT_ID,
-      scope: CONFIG.SCOPES,
-      callback: function(resp){
-        if(resp && resp.access_token){
-          accessToken = resp.access_token;
-          onSignedIn();
-        }else{
-          setGateNote('Não foi possível entrar. Tente novamente.');
-        }
-      }
+
+  // ---------- who switch ----------
+  function renderWhoSwitch(){
+    var el = document.getElementById('who-switch');
+    el.innerHTML = '';
+    settings.people.forEach(function(p){
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'active'===p.id ? '' : '';
+      btn.dataset.personId = p.id;
+      btn.innerHTML = '<span class="dot" style="background:'+p.color+'"></span>'+escapeHtml(p.name);
+      btn.onclick = function(){
+        currentPersonId = p.id;
+        persistDevicePerson(p.id);
+        renderWhoSwitch();
+        renderWhoBadges();
+      };
+      el.appendChild(btn);
     });
-    document.getElementById('btn-signin').addEventListener('click', function(){
-      setGateNote('Abrindo o login do Google…');
-      tokenClient.requestAccessToken();
+    syncWhoSwitch();
+  }
+  function syncWhoSwitch(){
+    var el = document.getElementById('who-switch');
+    Array.prototype.forEach.call(el.children, function(btn){
+      btn.classList.toggle('active', btn.dataset.personId === currentPersonId);
     });
-  }
-  function setGateNote(msg){ document.getElementById('gate-note').textContent = msg || ''; }
-
-  async function onSignedIn(){
-    setGateNote('Conectando ao Google Drive…');
-    try{
-      userProfile = await fetchUserInfo();
-    }catch(e){
-      setGateNote('Não foi possível ler seu perfil do Google. Tente novamente.');
-      return;
-    }
-
-    fileId = localStorage.getItem('of_file_id');
-    var content = null;
-    try{
-      if(fileId){ content = await driveGetContent(fileId); }
-    }catch(e){ fileId = null; localStorage.removeItem('of_file_id'); }
-
-    if(!fileId){
-      try{
-        var found = await driveFindFile();
-        if(found){ fileId = found; localStorage.setItem('of_file_id', fileId); content = await driveGetContent(fileId); }
-      }catch(e){ /* ignore, fall through to onboarding */ }
-    }
-
-    if(fileId && content !== null){
-      try{
-        var data = JSON.parse(content);
-        settings = data.settings || defaultSettings();
-        expenses = data.expenses || [];
-        incomes = data.incomes || [];
-        investments = data.investments || [];
-      }catch(e){
-        settings = defaultSettings();
-        expenses = []; incomes = []; investments = [];
-      }
-      if(!settings.freedomCategories){ settings.freedomCategories = defaultSettings().freedomCategories; }
-      if(!settings.incomeCategories){ settings.incomeCategories = defaultSettings().incomeCategories; }
-      resolvePersonIdentity();
-      showApp();
-    }else{
-      showOnboarding();
-    }
-  }
-
-  function resolvePersonIdentity(){
-    var email = (userProfile.email||'').toLowerCase();
-    var p1 = settings.people[0], p2 = settings.people[1];
-    if(p1.email && p1.email.toLowerCase()===email){ currentPersonId='p1'; }
-    else if(p2.email && p2.email.toLowerCase()===email){ currentPersonId='p2'; }
-    else if(!p2.email){
-      p2.email = userProfile.email;
-      if(!p2.name || p2.name==='Pessoa 2'){ p2.name = userProfile.name || p2.name; }
-      currentPersonId = 'p2';
-      persistAll();
-    }else if(!p1.email){
-      p1.email = userProfile.email;
-      if(!p1.name || p1.name==='Pessoa 1'){ p1.name = userProfile.name || p1.name; }
-      currentPersonId = 'p1';
-      persistAll();
-    }else{
-      currentPersonId = null;
-    }
-  }
-
-  // ---------- onboarding (first run) ----------
-  function showOnboarding(){
-    document.getElementById('gate').hidden = true;
-    document.getElementById('onboarding').hidden = false;
-    document.getElementById('onb-my-name').textContent = userProfile.name;
-    document.getElementById('onb-my-email').textContent = userProfile.email;
-  }
-  function wireOnboarding(){
-    document.getElementById('btn-create-file').addEventListener('click', async function(){
-      var errEl = document.getElementById('onb-error');
-      errEl.hidden = true;
-      var partnerEmail = document.getElementById('onb-partner-email').value.trim();
-      var partnerName = document.getElementById('onb-partner-name').value.trim();
-      if(!partnerEmail || partnerEmail.indexOf('@') === -1){
-        errEl.textContent = 'Informe um e-mail válido do seu parceiro(a).';
-        errEl.hidden = false;
-        return;
-      }
-      var btn = this;
-      btn.disabled = true; btn.textContent = 'Criando…';
-
-      settings = defaultSettings(userProfile.name, userProfile.email, partnerName || 'Parceiro(a)', partnerEmail);
-      expenses = []; incomes = []; investments = [];
-
-      try{
-        var newId = await driveCreateFile(CONFIG.DATA_FILENAME, {settings:settings, expenses:expenses, incomes:incomes, investments:investments});
-        fileId = newId;
-        localStorage.setItem('of_file_id', fileId);
-        btn.textContent = 'Compartilhando…';
-        var shared = await driveShareFile(fileId, partnerEmail);
-        currentPersonId = 'p1';
-        if(!shared){
-          errEl.textContent = 'Arquivo criado, mas não consegui compartilhar automaticamente. Você pode compartilhar "'+CONFIG.DATA_FILENAME+'" manualmente pelo Google Drive.';
-          errEl.hidden = false;
-          setTimeout(function(){ document.getElementById('onboarding').hidden = true; showApp(); }, 3500);
-        }else{
-          document.getElementById('onboarding').hidden = true;
-          showApp();
-        }
-      }catch(e){
-        btn.disabled = false; btn.textContent = 'Criar e compartilhar';
-        errEl.textContent = 'Não foi possível criar o arquivo agora. Verifique sua conexão e tente de novo.';
-        errEl.hidden = false;
-      }
-    });
-  }
-
-  // ---------- who am I ----------
-  function renderWhoAmI(){
-    var textEl = document.getElementById('who-text');
-    var dotEl = document.getElementById('who-dot');
-    var banner = document.getElementById('mismatch-banner');
-    if(currentPersonId){
-      var p = personById(currentPersonId);
-      textEl.textContent = 'você é ' + p.name;
-      dotEl.style.background = p.color;
-      if(banner) banner.hidden = true;
-    }else{
-      textEl.textContent = (userProfile?userProfile.name:'—') + ' (e-mail não associado)';
-      dotEl.style.background = '#999';
-      if(banner) banner.hidden = false;
-    }
   }
   function renderWhoBadges(){
     var p = personById(currentPersonId) || settings.people[0];
@@ -1683,7 +1476,6 @@
       ev.preventDefault();
       var errEl = document.getElementById('expense-form-error');
       errEl.hidden = true;
-      if(!currentPersonId){ errEl.textContent='Seu e-mail ainda não está associado a um perfil. Abra Configurações.'; errEl.hidden=false; return; }
       var amount = parseFloat(document.getElementById('exp-amount').value);
       var date = document.getElementById('exp-date').value;
       var categoryId = document.getElementById('exp-category').value;
@@ -1712,7 +1504,6 @@
       ev.preventDefault();
       var errEl = document.getElementById('income-form-error');
       errEl.hidden = true;
-      if(!currentPersonId){ errEl.textContent='Seu e-mail ainda não está associado a um perfil. Abra Configurações.'; errEl.hidden=false; return; }
       var amount = parseFloat(document.getElementById('inc-amount').value);
       var date = document.getElementById('inc-date').value;
       var categoryId = document.getElementById('inc-category').value;
@@ -1741,7 +1532,6 @@
       ev.preventDefault();
       var errEl = document.getElementById('freedom-form-error');
       errEl.hidden = true;
-      if(!currentPersonId){ errEl.textContent='Seu e-mail ainda não está associado a um perfil. Abra Configurações.'; errEl.hidden=false; return; }
       var amount = parseFloat(document.getElementById('free-amount').value);
       var date = document.getElementById('free-date').value;
       var categoryId = document.getElementById('free-category').value;
@@ -1836,9 +1626,7 @@
   var pendingFreedomCats = null;
   function openSettingsModal(){
     document.getElementById('settings-name-p1').value = settings.people[0].name;
-    document.getElementById('settings-email-p1').value = settings.people[0].email || '';
     document.getElementById('settings-name-p2').value = settings.people[1].name;
-    document.getElementById('settings-email-p2').value = settings.people[1].email || '';
     renderSwatches('swatches-p1', settings.people[0].color, PERSON_PALETTE);
     renderSwatches('swatches-p2', settings.people[1].color, PERSON_PALETTE);
     pendingExpenseCats = settings.expenseCategories.map(function(c){return Object.assign({},c);});
@@ -1936,8 +1724,6 @@
       }
       settings.people[0].name = document.getElementById('settings-name-p1').value.trim() || 'Pessoa 1';
       settings.people[1].name = document.getElementById('settings-name-p2').value.trim() || 'Pessoa 2';
-      settings.people[0].email = document.getElementById('settings-email-p1').value.trim();
-      settings.people[1].email = document.getElementById('settings-email-p2').value.trim();
       settings.people[0].color = getSelectedSwatch('swatches-p1', settings.people[0].color);
       settings.people[1].color = getSelectedSwatch('swatches-p2', settings.people[1].color);
       settings.expenseCategories = pendingExpenseCats;
@@ -1949,8 +1735,7 @@
       var ok = await persistSettings();
       btn.disabled=false; btn.textContent='Salvar';
       if(!ok){ errEl.textContent='Não foi possível salvar agora.'; errEl.hidden=false; return; }
-      resolvePersonIdentity();
-      renderWhoAmI();
+      renderWhoSwitch();
       renderWhoBadges();
       renderCategorySelects();
       renderPeoplePickers();
@@ -1959,72 +1744,56 @@
     });
   }
 
-  // ---------- refresh / sign out ----------
-  function wireHeaderActions(){
-    document.getElementById('btn-refresh').addEventListener('click', async function(){
-      var btn = this; btn.style.opacity = '0.5';
-      await pollOnce();
-      btn.style.opacity = '1';
-    });
-    document.getElementById('btn-signout').addEventListener('click', function(){
-      if(pollTimer) clearInterval(pollTimer);
-      try{ if(accessToken){ google.accounts.oauth2.revoke(accessToken, function(){}); } }catch(e){}
-      accessToken = null; userProfile = null; currentPersonId = null;
-      document.getElementById('notebook').hidden = true;
-      document.getElementById('gate').hidden = false;
-      setGateNote('');
-    });
-  }
-
-  // ---------- boot / app show ----------
-  function showApp(){
-    document.getElementById('gate').hidden = true;
-    document.getElementById('onboarding').hidden = true;
-    document.getElementById('notebook').hidden = false;
-    renderWhoAmI();
-    renderWhoBadges();
-    renderPeoplePickers();
-    renderCategorySelects();
-    renderFilterChips();
-    renderAll();
-    startPolling();
-  }
-
   // ---------- polling ----------
-  async function pollOnce(){
-    if(!fileId) return;
-    try{
-      var content = await driveGetContent(fileId);
-      var fresh = JSON.parse(content);
-      var changed = JSON.stringify(fresh) !== JSON.stringify({settings:settings, expenses:expenses, incomes:incomes, investments:investments});
-      if(changed){
-        settings = fresh.settings || settings;
-        expenses = fresh.expenses || [];
-        incomes = fresh.incomes || [];
-        investments = fresh.investments || [];
-        resolvePersonIdentity();
-        renderWhoAmI();
-        renderWhoBadges();
-        renderPeoplePickers();
-        renderCategorySelects();
-        renderFilterChips();
-        renderAll();
-      }
-    }catch(e){ /* ignore transient errors */ }
-  }
   function startPolling(){
     if(pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(function(){
+    pollTimer = setInterval(async function(){
       if(document.hidden) return;
+      if(!isConfigured()) return;
       if(!document.getElementById('edit-modal-backdrop').hidden) return;
       if(!document.getElementById('settings-modal-backdrop').hidden) return;
-      pollOnce();
+      try{
+        var res = await fetch(CONFIG.APPS_SCRIPT_URL, {method:'GET'});
+        var data = await res.json();
+        var freshExp = (data && data.expenses) || [];
+        var freshInc = (data && data.incomes) || [];
+        var freshInv = (data && data.investments) || [];
+        var freshSettings = (data && data.settings) || settings;
+        var changed = JSON.stringify(freshExp)!==JSON.stringify(expenses) || JSON.stringify(freshInc)!==JSON.stringify(incomes) || JSON.stringify(freshInv)!==JSON.stringify(investments) || JSON.stringify(freshSettings)!==JSON.stringify(settings);
+        if(changed){
+          expenses=freshExp; incomes=freshInc; investments=freshInv; settings=freshSettings;
+          renderWhoSwitch(); renderWhoBadges(); renderPeoplePickers(); renderCategorySelects(); renderFilterChips();
+          renderAll();
+        }
+      }catch(e){}
     }, 20000);
   }
 
   // ---------- boot ----------
-  function init(){
-    wireOnboarding();
+  async function init(){
+    await withTimeout(loadAll(), 4000);
+    if(!settings){ settings = defaultSettings(); }
+    if(!expenses){ expenses = []; }
+    if(!incomes){ incomes = []; }
+    if(!investments){ investments = []; }
+
+    document.getElementById('loading').hidden = true;
+    document.getElementById('notebook').hidden = false;
+
+    if(!isConfigured()){
+      var notice = document.getElementById('local-mode-notice');
+      notice.textContent = 'configuração pendente — cole a URL do Apps Script no arquivo';
+      notice.hidden = false;
+    }else if(!storageAvailable){
+      var notice2 = document.getElementById('local-mode-notice');
+      notice2.textContent = 'sem conexão com a planilha — verifique sua internet';
+      notice2.hidden = false;
+    }
+
+    renderWhoSwitch();
+    renderWhoBadges();
+    renderPeoplePickers();
+    renderCategorySelects();
     wireTabs();
     wireExpenseForm();
     wireIncomeForm();
@@ -2032,22 +1801,9 @@
     wireMonthNav();
     wireEditModal();
     wireSettingsModal();
-    wireHeaderActions();
-
-    if(CONFIG.CLIENT_ID.indexOf('COLE_AQUI') === 0){
-      setGateNote('Configuração pendente: cole o Client ID do Google Cloud no topo do arquivo (CONFIG.CLIENT_ID).');
-      return;
-    }
-
-    setGateNote('Carregando…');
-    waitForGoogleScript(function(ok){
-      if(!ok){
-        setGateNote('Não foi possível carregar o login do Google. Verifique sua internet e recarregue a página.');
-        return;
-      }
-      setGateNote('');
-      initAuth();
-    });
+    renderFilterChips();
+    renderAll();
+    startPolling();
   }
 
   init();
