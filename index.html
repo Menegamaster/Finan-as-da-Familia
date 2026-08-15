@@ -818,12 +818,13 @@
   // vai publicar na planilha do Google Sheets (veja o passo a passo).
   // =====================================================================
   var CONFIG = {
-    APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyU41dGTTvP25Er9H2FXBw0YdvMXSu9cbcOtWoV9mdGG02ke5zuoh3ESLnT8lQ2LFhV/exec'
+    APPS_SCRIPT_URL: 'COLE_AQUI_A_URL_DO_APPS_SCRIPT'
   };
   // =====================================================================
 
   // ---------- storage (Google Apps Script / planilha) ----------
   var storageAvailable = true;
+  var lastStorageError = '';
   function isConfigured(){
     return CONFIG.APPS_SCRIPT_URL && CONFIG.APPS_SCRIPT_URL.indexOf('COLE_AQUI') !== 0;
   }
@@ -836,13 +837,27 @@
     }
     try{
       var res = await fetch(CONFIG.APPS_SCRIPT_URL, {method:'GET'});
-      var data = await res.json();
+      if(!res.ok){
+        lastStorageError = 'HTTP ' + res.status + ' ' + res.statusText;
+        throw new Error(lastStorageError);
+      }
+      var text = await res.text();
+      var data;
+      try{
+        data = JSON.parse(text);
+      }catch(parseErr){
+        lastStorageError = 'resposta não é JSON válido: ' + text.slice(0,120);
+        throw parseErr;
+      }
       settings = data && data.settings ? data.settings : null;
       expenses = (data && data.expenses) || [];
       incomes = (data && data.incomes) || [];
       investments = (data && data.investments) || [];
       storageAvailable = true;
+      lastStorageError = '';
     }catch(e){
+      if(!lastStorageError){ lastStorageError = (e && e.message) ? e.message : String(e); }
+      console.error('[OrcamentoFamiliar] loadAll falhou:', e);
       settings = null; expenses = []; incomes = []; investments = [];
       storageAvailable = false;
     }
@@ -862,8 +877,15 @@
         headers:{'Content-Type':'text/plain;charset=utf-8'},
         body: JSON.stringify({settings:settings, expenses:expenses, incomes:incomes, investments:investments})
       });
+      if(!res.ok){
+        lastStorageError = 'HTTP ' + res.status + ' ' + res.statusText;
+      }
       return res.ok;
-    }catch(e){ return false; }
+    }catch(e){
+      lastStorageError = (e && e.message) ? e.message : String(e);
+      console.error('[OrcamentoFamiliar] persistAll falhou:', e);
+      return false;
+    }
   }
   async function persistSettings(){ return await persistAll(); }
   async function persistExpenses(){ return await persistAll(); }
@@ -1786,7 +1808,7 @@
       notice.hidden = false;
     }else if(!storageAvailable){
       var notice2 = document.getElementById('local-mode-notice');
-      notice2.textContent = 'sem conexão com a planilha — verifique sua internet';
+      notice2.textContent = 'erro: ' + (lastStorageError || 'sem conexão com a planilha');
       notice2.hidden = false;
     }
 
